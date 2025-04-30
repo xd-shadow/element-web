@@ -43,6 +43,8 @@ enum Views {
 
     // Another instance of the application has started up. We just show an error page.
     LOCK_STOLEN,
+
+    PASSKEY_WELCOME,
 }
 
 export default Views;

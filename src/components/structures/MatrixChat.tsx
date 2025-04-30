@@ -135,6 +135,7 @@ import { LoginSplashView } from "./auth/LoginSplashView";
 import { cleanUpDraftsIfRequired } from "../../DraftCleaner";
 import { InitialCryptoSetupStore } from "../../stores/InitialCryptoSetupStore";
 import { setTheme } from "../../theme";
+import PasskeyWelcome from "./passkeyAuth/PasskeyWelcome";
 
 // legacy export
 export { default as Views } from "../../Views";
@@ -211,7 +212,7 @@ export default class MatrixChat extends React.PureComponent<IProps, IState> {
         realQueryParams: {},
         startingFragmentQueryParams: {},
         config: {},
-        onTokenLoginCompleted: (): void => {},
+        onTokenLoginCompleted: (): void => { },
     };
 
     private firstSyncComplete = false;
@@ -672,6 +673,13 @@ export default class MatrixChat extends React.PureComponent<IProps, IState> {
                 }
                 this.startRegistration(payload.params || {});
                 break;
+            case "start_passkey_welcome":
+                this.setStateForNewView({
+                    view: Views.PASSKEY_WELCOME
+                });
+                this.notifyNewScreen("passkey_welcome");
+                break;
+
             case "start_login":
                 if (Lifecycle.isSoftLogout()) {
                     this.onSoftLogout();
@@ -1235,11 +1243,11 @@ export default class MatrixChat extends React.PureComponent<IProps, IState> {
                 <span>
                     {isSpace
                         ? _t("leave_room_dialog|leave_space_question", {
-                              spaceName: roomToLeave?.name ?? _t("common|unnamed_space"),
-                          })
+                            spaceName: roomToLeave?.name ?? _t("common|unnamed_space"),
+                        })
                         : _t("leave_room_dialog|leave_room_question", {
-                              roomName: roomToLeave?.name ?? _t("common|unnamed_room"),
-                          })}
+                            roomName: roomToLeave?.name ?? _t("common|unnamed_room"),
+                        })}
                     {warnings}
                 </span>
             ),
@@ -1689,6 +1697,8 @@ export default class MatrixChat extends React.PureComponent<IProps, IState> {
     }
 
     public showScreen(screen: string, params?: { [key: string]: any }): void {
+        console.log("showScreen", screen, params);
+
         const cli = MatrixClientPeg.get();
         const isLoggedOutOrGuest = !cli || cli.isGuest();
         if (!isLoggedOutOrGuest && AUTH_SCREENS.includes(screen)) {
@@ -1708,7 +1718,14 @@ export default class MatrixChat extends React.PureComponent<IProps, IState> {
                 action: "start_mobile_registration",
                 params: params,
             });
-        } else if (screen === "login") {
+        }
+        else if (screen === "passkey_welcome") {
+            dis.dispatch({
+                action: "start_passkey_welcome",
+                params: params,
+            });
+        }
+        else if (screen === "login") {
             dis.dispatch({
                 action: "start_login",
                 params: params,
@@ -2108,7 +2125,16 @@ export default class MatrixChat extends React.PureComponent<IProps, IState> {
             );
         } else if (this.state.view === Views.LOCK_STOLEN) {
             view = <SessionLockStolenView />;
-        } else {
+        }
+        else if (this.state.view === Views.PASSKEY_WELCOME) {
+            view = (
+                <PasskeyWelcome
+                    onLoginComplete={this.onUserCompletedLoginFlow}
+                    serverConfig={this.getServerProperties().serverConfig}
+                />
+            );
+        }
+        else {
             logger.error(`Unknown view ${this.state.view}`);
             return null;
         }
