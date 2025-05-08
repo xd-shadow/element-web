@@ -23,6 +23,8 @@ import Spinner from "../elements/Spinner";
 import CaptchaForm from "./CaptchaForm";
 import { Flex } from "../../utils/Flex";
 import { pickBestPolicyLanguage } from "../../../Terms.ts";
+import PasskeyUtils from "../../../utils/PasskeyUtils";
+import { MatrixClientPeg } from "../../../MatrixClientPeg.ts";
 
 /* This file contains a collection of components which are used by the
  * InteractiveAuth to prompt the user to enter the information needed
@@ -88,7 +90,7 @@ interface IAuthEntryProps {
 }
 
 interface IPasswordAuthEntryState {
-    password: string;
+    // password: string;
 }
 
 export class PasswordAuthEntry extends React.Component<IAuthEntryProps, IPasswordAuthEntryState> {
@@ -97,40 +99,52 @@ export class PasswordAuthEntry extends React.Component<IAuthEntryProps, IPasswor
     public constructor(props: IAuthEntryProps) {
         super(props);
 
-        this.state = {
-            password: "",
-        };
+        // this.state = {
+        //     password: "",
+        // };
     }
 
     public componentDidMount(): void {
         this.props.onPhaseChange(DEFAULT_PHASE);
     }
 
-    private onSubmit = (e: FormEvent): void => {
+    private onSubmit = async (e: FormEvent): Promise<void> => {
         e.preventDefault();
         if (this.props.busy) return;
+        console.log(this.props.matrixClient.credentials.userId);
 
+        const userIdLocalpart = MatrixClientPeg.safeGet().getUserIdLocalpart()
+        if (!userIdLocalpart) {
+            throw new Error("No userName found");
+        }
+        console.log(userIdLocalpart);
+
+        const password = await PasskeyUtils.loginWithPasskey(userIdLocalpart)
+
+        // this.setState({
+        //     password: password,
+        // });
         this.props.submitAuthDict({
             type: AuthType.Password,
             identifier: {
                 type: "m.id.user",
                 user: this.props.matrixClient.credentials.userId,
             },
-            password: this.state.password,
+            password: password,
         });
     };
 
-    private onPasswordFieldChange = (ev: ChangeEvent<HTMLInputElement>): void => {
-        // enable the submit button iff the password is non-empty
-        this.setState({
-            password: ev.target.value,
-        });
-    };
+    // private onPasswordFieldChange = (ev: ChangeEvent<HTMLInputElement>): void => {
+    //     // enable the submit button iff the password is non-empty
+    //     this.setState({
+    //         password: ev.target.value,
+    //     });
+    // };
 
     public render(): React.ReactNode {
-        const passwordBoxClass = classNames({
-            error: this.props.errorText,
-        });
+        // const passwordBoxClass = classNames({
+        //     error: this.props.errorText,
+        // });
 
         let submitButtonOrSpinner;
         if (this.props.busy) {
@@ -140,7 +154,7 @@ export class PasswordAuthEntry extends React.Component<IAuthEntryProps, IPasswor
                 <input
                     type="submit"
                     className="mx_Dialog_primary"
-                    disabled={!this.state.password}
+                    // disabled={!this.state.password}
                     value={_t("action|continue")}
                 />
             );
@@ -159,7 +173,7 @@ export class PasswordAuthEntry extends React.Component<IAuthEntryProps, IPasswor
             <div>
                 <p>{_t("auth|uia|password_prompt")}</p>
                 <form onSubmit={this.onSubmit} className="mx_InteractiveAuthEntryComponents_passwordSection">
-                    <Field
+                    {/* <Field
                         className={passwordBoxClass}
                         type="password"
                         name="passwordField"
@@ -167,7 +181,7 @@ export class PasswordAuthEntry extends React.Component<IAuthEntryProps, IPasswor
                         autoFocus={true}
                         value={this.state.password}
                         onChange={this.onPasswordFieldChange}
-                    />
+                    /> */}
                     {errorSection}
                     <div className="mx_button_row">{submitButtonOrSpinner}</div>
                 </form>
@@ -480,8 +494,8 @@ export class EmailIdentityAuthEntry extends React.Component<
                                             onTooltipOpenChange={
                                                 this.state.requested
                                                     ? (open) => {
-                                                          if (!open) this.setState({ requested: false });
-                                                      }
+                                                        if (!open) this.setState({ requested: false });
+                                                    }
                                                     : undefined
                                             }
                                             onClick={async (): Promise<void> => {

@@ -9,7 +9,7 @@ import { type IMatrixClientCreds } from "../../../MatrixClientPeg";
 import Login from "../../../Login";
 import PasskeyUtils from "../../../utils/PasskeyUtils";
 
-const username = 'testuser9'
+const username = 'testuser12'
 
 interface IProps {
     onLoginComplete: (credentials: IMatrixClientCreds) => Promise<void>;

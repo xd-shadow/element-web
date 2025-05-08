@@ -128,7 +128,7 @@ export default class PasskeyUtils {
 
       const password = JSON.stringify(
         {
-          publicKey: 'u7S7Bl2i43N4BQRU_H0X6g1KF2dxLxhcMkVV7f5BHYWxTLHXr7gpfundMv321SzoRg4LKQB2Ww7bxAuHdmWCNA',
+          publicKey: '3YLDOf07qeY1QTYOdX7L5nF2Rpuq_bLAmFDDqou0QaWnwm93JbL9HTBJXBwtGJ1w80SjUV_Tc9PcZ1_NRswErw',
           assertion: {
             type: credential.type,
             rawId: toBase64Url(credential.rawId),
