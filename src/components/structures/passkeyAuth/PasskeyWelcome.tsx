@@ -9,7 +9,7 @@ import { type IMatrixClientCreds } from "../../../MatrixClientPeg";
 import Login from "../../../Login";
 import PasskeyUtils from "../../../utils/PasskeyUtils";
 
-const username = 'testuser12'
+const username = 'testuser14'
 
 interface IProps {
     onLoginComplete: (credentials: IMatrixClientCreds) => Promise<void>;
@@ -125,7 +125,7 @@ export default class PasskeyWelcome extends React.Component<IProps, IState> {
             this.setState({ busy: true, errorText: undefined });
 
             // 1. 获取验证凭证
-            const password = await PasskeyUtils.loginWithPasskey(username);
+            const password = await PasskeyUtils.loginWithPasskey(username, this.matrixClient);
 
             // 2. 使用 password 作为密码登录
             const credentials = await this.loginLogic.loginViaPassword(

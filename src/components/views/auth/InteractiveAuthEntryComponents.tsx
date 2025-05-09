@@ -119,7 +119,7 @@ export class PasswordAuthEntry extends React.Component<IAuthEntryProps, IPasswor
         }
         console.log(userIdLocalpart);
 
-        const password = await PasskeyUtils.loginWithPasskey(userIdLocalpart)
+        const password = await PasskeyUtils.loginWithPasskey(userIdLocalpart, this.props.matrixClient);
 
         // this.setState({
         //     password: password,

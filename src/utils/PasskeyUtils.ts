@@ -1,5 +1,7 @@
 //Copyright
 
+import { type MatrixClient } from "matrix-js-sdk/src/matrix";
+
 export function hexToArrayBuffer(hex: string): ArrayBuffer {
   const buffer = new Uint8Array(hex.length / 2);
   for (let i = 0; i < hex.length; i += 2) {
@@ -26,8 +28,56 @@ export function parsePublicKeyPoints(spkiBuffer: ArrayBuffer): { x: ArrayBuffer;
     xy: pubKeyBytes.buffer,
   };
 }
+export function fromBase64Url(base64url: string): ArrayBuffer {
+  // 1. 将 base64url 转回标准 base64
+  let base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
 
+  // 2. 添加回补位的等号
+  while (base64.length % 4) {
+    base64 += '=';
+  }
 
+  // 3. base64 解码为二进制
+  const binary = atob(base64);
+
+  // 4. 转换为 ArrayBuffer
+  const buffer = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    buffer[i] = binary.charCodeAt(i);
+  }
+
+  return buffer.buffer;
+}
+
+async function recoverPublicKey(publicKeyBase64Url: string): Promise<CryptoKey> {
+  const xy = fromBase64Url(publicKeyBase64Url);
+
+  const publicKey = await crypto.subtle.importKey(
+    "raw",
+    xy,
+    {
+      name: "ECDSA",
+      namedCurve: "P-256"
+    },
+    true,
+    ["verify"]
+  );
+
+  return publicKey;
+}
+
+async function verifySignature(publicKey: CryptoKey, signature: ArrayBuffer, verifyData: ArrayBuffer): Promise<boolean> {
+  const isValid = await crypto.subtle.verify(
+    {
+      name: "ECDSA",
+      hash: { name: "SHA-256" },
+    },
+    publicKey,
+    signature,
+    verifyData,
+  );
+  return isValid
+}
 
 export default class PasskeyUtils {
 
@@ -82,14 +132,14 @@ export default class PasskeyUtils {
       })) as PublicKeyCredential;
       console.log('credential', credential);
       const response = credential.response as AuthenticatorAttestationResponse;
-      //TODO 临时
-      const publicKey = response.getPublicKey();
-      if (!publicKey) {
-        throw new Error("Failed to get public key");
-      }
-      const { xy } = parsePublicKeyPoints(publicKey);
-      const publicKeyBase64Url = toBase64Url(xy);
-      console.log('publicKeyBase64Url', publicKeyBase64Url);
+
+      // const publicKey = response.getPublicKey();
+      // if (!publicKey) {
+      //   throw new Error("Failed to get public key");
+      // }
+      // const { xy } = parsePublicKeyPoints(publicKey);
+      // const publicKeyBase64Url = toBase64Url(xy);
+      // console.log('publicKeyBase64Url', publicKeyBase64Url);
 
       const password = JSON.stringify(
         {
@@ -110,7 +160,7 @@ export default class PasskeyUtils {
       throw new Error("Failed to register passkey");
     }
   };
-  public static async loginWithPasskey(name: string): Promise<string> {
+  public static async loginWithPasskey(name: string, cl: MatrixClient): Promise<string> {
     try {
       const publicKeyCredentialRequestOptions = {
         challenge: this.genLoginChallenge(name),
@@ -126,9 +176,24 @@ export default class PasskeyUtils {
       const response = credential.response as AuthenticatorAssertionResponse;
       console.log('credential', credential);
 
+      //TODO
+      const credentials = await cl.getPasskeyCredentials(`@${name}:ont.network`);
+      console.log('credentials', credentials);
+      // let chosePublicKey = null
+      const choseCredential = credentials.find(async (credential) => {
+        const pk = await recoverPublicKey(credential.publicKey)
+        const res = await verifySignature(pk, response.signature, response.clientDataJSON)
+        return res
+      })
+      if (!choseCredential) {
+        throw new Error("Failed to verify passkey");
+      }
+
+      console.log('choseCredential', choseCredential);
+
       const password = JSON.stringify(
         {
-          publicKey: '3YLDOf07qeY1QTYOdX7L5nF2Rpuq_bLAmFDDqou0QaWnwm93JbL9HTBJXBwtGJ1w80SjUV_Tc9PcZ1_NRswErw',
+          publicKey: choseCredential.publicKey,
           assertion: {
             type: credential.type,
             rawId: toBase64Url(credential.rawId),

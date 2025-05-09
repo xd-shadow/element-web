@@ -17,6 +17,8 @@ import { shouldPolyfill as shouldPolyFillIntlSegmenter } from "@formatjs/intl-se
 import { parseQsFromFragment } from "./url_utils";
 import "./modernizr";
 
+import "../extendApis";
+
 // Require common CSS here; this will make webpack process it into bundle.css.
 // Our own CSS (which is themed) is imported via separate webpack entry points
 // in webpack.config.js
