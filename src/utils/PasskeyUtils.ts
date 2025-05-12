@@ -2,6 +2,8 @@
 
 import { type MatrixClient } from "matrix-js-sdk/src/matrix";
 
+import SdkConfig from "../SdkConfig";
+
 export function hexToArrayBuffer(hex: string): ArrayBuffer {
   const buffer = new Uint8Array(hex.length / 2);
   for (let i = 0; i < hex.length; i += 2) {
@@ -99,7 +101,6 @@ export default class PasskeyUtils {
     try {
 
       const userIdArray = new TextEncoder().encode(name);
-      // const challenge = crypto.getRandomValues(new Uint8Array(32));
 
       const publicKeyCredentialCreationOptions = {
         challenge: this.genRegisterChallenge(name),
@@ -116,7 +117,7 @@ export default class PasskeyUtils {
         pubKeyCredParams: [
           {
             type: "public-key",
-            alg: -7, // ES256
+            alg: -7,
           },
         ],
         authenticatorSelection: {
@@ -176,8 +177,8 @@ export default class PasskeyUtils {
       const response = credential.response as AuthenticatorAssertionResponse;
       console.log('credential', credential);
 
-      //TODO
-      const credentials = await cl.getPasskeyCredentials(`@${name}:ont.network`);
+      const config = SdkConfig.get();
+      const credentials = await cl.getPasskeyCredentials(`@${name}:${config.validated_server_config?.hsName}`);
       console.log('credentials', credentials);
       // let chosePublicKey = null
       const choseCredential = credentials.find(async (credential) => {

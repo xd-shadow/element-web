@@ -12,6 +12,8 @@ declare module "matrix-js-sdk/src/client" {
   }
 }
 
+
+const requestPrefix = "/_matrix/client/v3";
 const registerExtendApis = function (): void {
   MatrixClient.prototype.getPasskeyCredentials = function (
     userId: string
@@ -21,7 +23,7 @@ const registerExtendApis = function (): void {
       `/profile/${encodeURIComponent(userId)}/credentials`,
       undefined, // query params
       undefined, // data
-      { prefix: "/_matrix/client/v3" }
+      { prefix: requestPrefix }
     );
   };
 }
